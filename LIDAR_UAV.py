@@ -1,6 +1,8 @@
-import open3d as o3d
+#import open3d as o3d
 import laspy
 import numpy as np
+import sys
+from datetime import datetime, timedelta
 
 #print("Load a ply point cloud, print it, and render it")
 ##pcd = o3d.io.read_point_cloud("table_scene_lms400.pcd")
@@ -13,19 +15,36 @@ import numpy as np
 ##o3d.visualization.draw_geometries([cl])
 #o3d.io.write_point_cloud("tmp.pcd", cl)
 
-las = laspy.read("20200318_01.las")
+inputLASFILE = sys.argv[1]
+LASFILE = laspy.read(inputLASFILE)
+
+# GPS-Zeitursprung: 6. Januar 1980, 00:00:00 UTC
+gps_epoch = datetime(1980, 1, 6)
+
 
 #for dimension in las.point_format.dimensions:
 #	print(dimension.name)
 
-confidence = las.confidence
-X = las.X
-Y = las.Y
-Z = las.Z
+#confidence = las.confidence
+X = LASFILE.X
+Y = LASFILE.Y
+Z = LASFILE.Z
+I = LASFILE.intensity
+TIME = LASFILE.gps_time
 
-X = X/100+200000
-Y = Y/100-200000
-Z = Z/100-1000
+# Umwandlung der ersten GPS-Zeit in ein datetime-Objekt
+datetime_first_gps = gps_epoch + timedelta(seconds=TIME[0])
 
-#np.savetxt('z.txt', np.c_[X,Y,Z])
-np.savetxt('confidence.txt', np.c_[X,Y,confidence])
+# Anzeigen der umgewandelten Zeit
+print(datetime_first_gps)
+
+
+
+#X = X/100+200000
+#Y = Y/100-200000
+#Z = Z/100-1000
+
+print(X,Y,Z)
+
+##np.savetxt('z.txt', np.c_[X,Y,Z])
+#np.savetxt('confidence.txt', np.c_[X,Y,confidence])
