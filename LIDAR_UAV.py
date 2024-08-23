@@ -29,3 +29,5 @@ Z = Z/100-1000
 
 #np.savetxt('z.txt', np.c_[X,Y,Z])
 np.savetxt('confidence.txt', np.c_[X,Y,confidence])
+
+# this is a test added by jonathan
