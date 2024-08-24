@@ -49,9 +49,3 @@ print(X,Y,Z)
 
 ##np.savetxt('z.txt', np.c_[X,Y,Z])
 #np.savetxt('confidence.txt', np.c_[X,Y,confidence])
-=======
-#np.savetxt('z.txt', np.c_[X,Y,Z])
-np.savetxt('confidence.txt', np.c_[X,Y,confidence])
-
-# this is a test added by jonathan
->>>>>>> b13705da8d7514336b225cecbc4c10b1e817f753
