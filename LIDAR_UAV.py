@@ -35,6 +35,7 @@ TIME = LASFILE.gps_time
 # Umwandlung der ersten GPS-Zeit in ein datetime-Objekt
 datetime_first_gps = gps_epoch + timedelta(seconds=TIME[0])
 
+<<<<<<< HEAD
 # Anzeigen der umgewandelten Zeit
 print(datetime_first_gps)
 
@@ -48,3 +49,9 @@ print(X,Y,Z)
 
 ##np.savetxt('z.txt', np.c_[X,Y,Z])
 #np.savetxt('confidence.txt', np.c_[X,Y,confidence])
+=======
+#np.savetxt('z.txt', np.c_[X,Y,Z])
+np.savetxt('confidence.txt', np.c_[X,Y,confidence])
+
+# this is a test added by jonathan
+>>>>>>> b13705da8d7514336b225cecbc4c10b1e817f753
