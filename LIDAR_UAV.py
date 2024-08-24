@@ -26,14 +26,14 @@ gps_epoch = datetime(1980, 1, 6)
 #	print(dimension.name)
 
 #confidence = las.confidence
-X = LASFILE.X
-Y = LASFILE.Y
-Z = LASFILE.Z
-I = LASFILE.intensity
-TIME = LASFILE.gps_time
+lon = LASFILE.x
+lat = LASFILE.y
+z = LASFILE.z
+i = LASFILE.intensity
+time = LASFILE.gps_time + 1e9
 
 # Umwandlung der ersten GPS-Zeit in ein datetime-Objekt
-datetime_first_gps = gps_epoch + timedelta(seconds=TIME[0])
+datetime_first_gps = gps_epoch + timedelta(seconds=time[0])
 
 # Anzeigen der umgewandelten Zeit
 print(datetime_first_gps)
