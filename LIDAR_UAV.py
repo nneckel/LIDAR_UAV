@@ -49,7 +49,7 @@ def save_to_tif(raster, path, crs='EPSG:3413'):
         dst.write(raster, 1)
 
 
-def read_rtk(path, date):
+def read_rtk(path, date, drop_invalid=True):
     '''
     Reads files from RTK base station into pandas DataFrame. Date is converted to datetime and rows with invalid data are droped.
     
@@ -60,7 +60,8 @@ def read_rtk(path, date):
     '''
     df = pd.read_csv(path, sep=',', names=['bestpos', 'time', 'type', 'lat', 'lon', 'hgt', 'std', '1', '2'], index_col=False)
 
-    df = df[(df.time!='0ms')*(df.lat!='lat:0.000000000')].copy()
+    if drop_invalid:
+        df = df[(df.time!='0ms')*(df.lat!='lat:0.000000000')].copy()
 
     date = pd.to_datetime(date)
     last_sunday = pd.to_datetime((date - pd.to_timedelta((date.weekday()+1) % 7, 'd')).date())
