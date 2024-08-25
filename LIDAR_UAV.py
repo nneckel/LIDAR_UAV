@@ -144,6 +144,11 @@ if __name__ == '__main__':
 
     las = read_las(path=inputLASFILE, only_with_rgb=True)
 
-    station = read_RTK('terra_las/RTK021.DAT', date='2024-08-20')
+    station = read_rtk('terra_las/RTK021.DAT', date='2024-08-20')
 
     las = drift_corr_from_gps(las, station)
+
+    grid_rgb_corr = np.array([
+        lid.gridding(las.x_corr, las.y_corr, las.r/65536 , resolution=res), 
+        lid.gridding(las.x_corr, las.y_corr, las.g/65536, resolution=res), 
+        lid.gridding(las.x_corr, las.y_corr, las.b/65536, resolution=res),]).swapaxes(0, 2).swapaxes(0, 1)
