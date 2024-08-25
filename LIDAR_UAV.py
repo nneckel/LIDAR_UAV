@@ -11,11 +11,11 @@ import rasterio
 
 
 def GetFileList(path,wildcard):
-	filelist = []
-	for file in os.listdir(path):
-		if fnmatch.fnmatch(file, wildcard):
-			filelist = np.append(filelist,file)
-	return np.sort(filelist)
+    filelist = []
+    for file in os.listdir(path):
+        if fnmatch.fnmatch(file, wildcard):
+            filelist = np.append(filelist,file)
+    return np.sort(filelist)
 
 
 def gridding(x, y, z, resolution=None):
