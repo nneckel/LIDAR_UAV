@@ -4,6 +4,7 @@ import numpy as np
 import sys
 # from datetime import datetime, timedelta
 import fnmatch
+import os
 import pandas as pd
 from pyproj import Transformer
 import pygmt
@@ -24,7 +25,6 @@ def gridding(x, y, z, resolution=None):
     xmax = xmin + ((x.max()-xmin)//resolution + 1) * resolution
     ymax = ymin + ((y.max()-ymin)//resolution + 1) * resolution
     raster = {'resolution':resolution, 'xmin':xmin, 'xmax':xmax, 'ymin':ymin, 'ymax':ymax}
-    print(raster)
     grid = pygmt.xyz2grd(x=x, y=y, z=z, spacing=raster['resolution'], region=[raster['xmin'], raster['xmax'], raster['ymin'], raster['ymax']])
     return grid
 
@@ -78,18 +78,19 @@ def read_rtk(path, date):
 
 def read_las(path, only_with_rgb=False):
     '''
-    Reads .las file and returns pandas DataFrame with columns time, lat, lon (EPSG:4326), x, y (EPSG:3413), z, r,g,b
+    Reads given .las file or all .las files if a directory is passed and returns pandas DataFrame with columns time, lat, lon (EPSG:4326), x, y (EPSG:3413), z, r,g,b
     '''
 
     if path[-4:]=='.las':
-        las_files = [laspy.read(path)]
+        # read single file
+        paths = [path]
     else:
-        # reading a whole dictionary could be implemented
-        # GetFileList(path, '*.las')
-        print('Pass path to .las file')
+        # read whole directory
+        paths = [path + '/' + file for file in GetFileList(path, '*.las')]
 
     las_array = []
-    for las_file in las_files:
+    for path in paths:
+        las_file = laspy.read(path)
 
         if only_with_rgb:
             mask = ((las_file.red + las_file.green + las_file.blue) != 0)
@@ -100,7 +101,6 @@ def read_las(path, only_with_rgb=False):
         x, y = transformer.transform(lat, lon)
 
         gps_epoch = pd.to_datetime('1980-01-06')
-        print(las_file.gps_time)
         time = gps_epoch + pd.to_timedelta(las_file.gps_time+1e9, 's')
 
         las = pd.DataFrame(data={'time':np.array(time), 'lat':np.array(lat), 'lon':np.array(lon), 'x':np.array(x), 'y':np.array(y), 
@@ -138,12 +138,12 @@ def drift_corr_from_gps(las, station, ref_date=None):
     return las
 
 
+if __name__ == '__main__':
+    inputLASFILE = sys.argv[1]
+    #LASFILE = laspy.read(inputLASFILE)
 
-inputLASFILE = sys.argv[1]
-#LASFILE = laspy.read(inputLASFILE)
+    las = read_las(path=inputLASFILE, only_with_rgb=True)
 
-las = read_las(path=inputLASFILE, only_with_rgb=True)
+    station = read_RTK('terra_las/RTK021.DAT', date='2024-08-20')
 
-station = read_RTK('terra_las/RTK021.DAT', date='2024-08-20')
-
-las = drift_corr_from_gps(las, station)
+    las = drift_corr_from_gps(las, station)
