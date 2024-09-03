@@ -26,6 +26,25 @@ def read_stations(fnames, to_epsg=None):
     return stations
 
 
+def gap_test(time_series, time_test):
+    '''
+    Calculates the time between neighbouring entries in time_series that contain the times in time_test
+    :param time_series: (n), time series to test
+    :param time_test:  (m), times at which to test
+
+    :return timedelta_around_test: (m) length of interval( pandas timedelta) of time_series around times in time_test
+    '''
+    time_series = pd.to_datetime(time_series).to_numpy()
+    time_test = pd.to_datetime(time_test).to_numpy()
+    
+    indices = np.searchsorted(time_series, time_test)
+    time_before_test = time_series[indices-1]
+    time_after_test = time_series[indices]
+    timedelta_around_test = pd.to_timedelta(time_after_test - time_before_test)
+
+    return timedelta_around_test
+
+
 def calc_transform(stations, time, ref_time=None, translation_only=False):
     '''
     Computes the translation and rotation that transforms the coordinates of the gps stations to their position at ref_time.
@@ -102,7 +121,6 @@ def transform(points, T, R=None, center=None):
     return points_trans
 
 
-
 def epsg(lat, lon):
     if lat > 60:
         return 'EPSG:3413'
@@ -113,7 +131,7 @@ def epsg(lat, lon):
         return None
 
 
-def drift_corr(x, y, time, stations, ref_time=None, translation_only=False, plot=True):
+def drift_corr(x, y, time, stations, ref_time=None, translation_only=False, plot=False):
     '''
     Takes point coordinates in metric coordinate system and times capured on a drifting platform 
     and shifts the points to the position on the platform at ref_time. 
@@ -151,6 +169,31 @@ def drift_corr(x, y, time, stations, ref_time=None, translation_only=False, plot
     x_corr, y_corr = points_corr[:,0], points_corr[:,1]
 
     return x_corr, y_corr
+
+def drift_corr_latlon(lat, lon, time, stations, ref_time=None, translation_only=False, plot=True):
+    '''
+    Like drift_corr, but takes and returns coordinates in lat lon (EGSG:4326).
+    :param lat, lon:
+    :param time:
+    :param ref_time:
+    :param plot:
+
+    :return lat_corr, lon_corr: 
+    '''
+    from pyproj import Transformer
+
+    metric_crs = epsg(np.median(lat), np.median(lon))
+
+    transformer = Transformer.from_crs('EPSG:4326', metric_crs)
+    x, y = transformer.transform(lat, lon)
+
+    x_corr, y_corr = drift_corr(x, y, time, stations, ref_time=ref_time, translation_only=translation_only, plot=plot)
+
+    transformer = Transformer.from_crs(metric_crs, 'EPSG:4326')
+    lat_corr, lon_corr = transformer.transform(x_corr, y_corr)
+
+    return lat_corr, lon_corr
+
 
 if __name__ == '__main__':
     import sys
