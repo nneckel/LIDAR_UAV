@@ -17,7 +17,7 @@ def read_stations(fnames, to_epsg=None):
         usecols=[0,1,2,4], names=['time', 'lat', 'lon', 'height'], parse_dates=['time'])
         for fname in fnames]
     
-    if to_epsg != None:
+    if to_epsg is not None:
         from pyproj import Transformer
         transformer = Transformer.from_crs('EPSG:4326', to_epsg)
         for gps in stations:
@@ -39,7 +39,7 @@ def calc_transform(stations, time, ref_time=None, translation_only=False):
     :return center_rotation: point around rotation is calculated, not returned if translation_only=True
     '''
 
-    if ref_time==None:
+    if ref_time is None:
         ref_time = pd.Series(time.mean())
         print('ref_time is set to', ref_time[0])
     else:
@@ -58,7 +58,7 @@ def calc_transform(stations, time, ref_time=None, translation_only=False):
     T = gps_ref_mean - gps_mean
 
     if translation_only:
-        return T
+        return T, None, None
 
     # Rotation
     # see https://medium.com/@hirok4/estimate-rotation-matrix-from-corresponding-point-cloud-9f7e7b155370
@@ -84,7 +84,7 @@ def calc_transform(stations, time, ref_time=None, translation_only=False):
     return T, R, center_rotation
 
 
-def transform(points, T, R, center):
+def transform(points, T, R=None, center=None):
     '''
     Applies translation and rotation to points.
     :param points: (n, 2), x and y coordinate
@@ -94,8 +94,14 @@ def transform(points, T, R, center):
 
     :return points_trans: (n,2), transformed points
     '''
-    points_trans = np.einsum('bij,bi->bj', R, points + T - center) + center # maybe correction is in wrong direction, swap i and j
+    if R is None:
+        points_trans = points + T
+    else:
+        points_trans = np.einsum('bij,bi->bj', R, points + T - center) + center # maybe correction is in wrong direction, swap i and j
+    
     return points_trans
+
+
 
 def epsg(lat, lon):
     if lat > 60:
@@ -106,7 +112,8 @@ def epsg(lat, lon):
         print('No CRS determined!')
         return None
 
-def drift_corr(x, y, time, stations, ref_time=None, plot=True):
+
+def drift_corr(x, y, time, stations, ref_time=None, translation_only=False, plot=True):
     '''
     Takes point coordinates in metric coordinate system and times capured on a drifting platform 
     and shifts the points to the position on the platform at ref_time. 
@@ -120,7 +127,7 @@ def drift_corr(x, y, time, stations, ref_time=None, plot=True):
     '''
 
     time = pd.to_datetime(time)
-    T, R, center = trans_param = calc_transform(stations, time, ref_time=ref_time)
+    T, R, center = trans_param = calc_transform(stations, time, ref_time=ref_time, translation_only=translation_only)
     
     points = np.array([x,y]).T
     points_corr = transform(points, *trans_param)
@@ -133,7 +140,8 @@ def drift_corr(x, y, time, stations, ref_time=None, plot=True):
         plt.legend()
         
         plt.subplot(2,1,2)
-        plt.plot(time, np.arccos(R[:,0,0]) / np.pi * 180)
+        if R is not None:
+            plt.plot(time, np.arccos(R[:,0,0]) / np.pi * 180)
         plt.xlabel('Time')
         plt.ylabel('Rotation (°)')
 
@@ -145,4 +153,13 @@ def drift_corr(x, y, time, stations, ref_time=None, plot=True):
     return x_corr, y_corr
 
 if __name__ == '__main__':
+    import sys
+
+    test = sys.argv[1]
+
+
     ...
+
+
+    # add check for gps gaps
+    # add just translation to apply transfrom
