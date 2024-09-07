@@ -11,6 +11,11 @@ import pycedrift as pyce
 
 
 def las_to_time(gps_time):
+    '''
+    converts gps_time from .las file to pandas datetime
+    :param gps_time: time from laspy object e.g. las.gps_time
+    :return time: pandas datetime Series
+    '''
     gps_epoch = pd.to_datetime('1980-01-06')
     time = gps_epoch + pd.to_timedelta(gps_time+1e9, 's')
     return time
