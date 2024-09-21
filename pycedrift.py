@@ -2,20 +2,72 @@ import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
 
+def GetFileList(path,wildcard):
+    import fnmatch
+    import os
+    filelist = []
+    for file in os.listdir(path):
+        if fnmatch.fnmatch(file, wildcard):
+            filelist = np.append(filelist,file)
+    return np.sort(filelist)
 
-def read_stations(fnames, to_epsg=None):
+def read_stations(station_fnames, to_epsg=None):
     '''
-    Reads .pos files from GPS stations and returns array of pandas DataFrames with columns time, lat, lon. 
+    Reads .pos files or directoryies with .pos from GPS stations and returns array of pandas DataFrames with columns time, lat, lon. 
     If to_epsg is given columns x and y are added in respectove CRS.
     :param fnames: list of paths.
     :param to_epsg: EPSG code, e.g., 'EPSG:3413'
 
     :return stations: list of pandas DataFrames
     '''
-    stations = [pd.read_csv(
-        fname, sep='  ', header=None, comment='%', 
-        usecols=[0,1,2,4], names=['time', 'lat', 'lon', 'height'], parse_dates=['time'])
-        for fname in fnames]
+    stations = []
+    for station_fname in station_fnames: # iterate over stations
+        if station_fname[-4:] != '.pos': # if fname is a directory
+            fnames = station_fname + '/' + GetFileList(station_fname, '*.pos')
+        else: # if fname is afiel
+            fnames = [station_fname] 
+
+        files = []
+        for fname in fnames: # iterate over files in one station directory
+            file = pd.read_csv(
+                str(fname), sep='  ', header=None, comment='%', 
+                usecols=[0,1,2,4], names=['time', 'lat', 'lon', 'height'], parse_dates=['time'])
+            files += [file]
+        station = pd.concat(files)
+        stations += [station]
+    
+    if to_epsg is not None:
+        from pyproj import Transformer
+        transformer = Transformer.from_crs('EPSG:4326', to_epsg)
+        for gps in stations:
+            gps.loc[:,'x'], gps.loc[:,'y'] = transformer.transform(gps.lat, gps.lon)
+    
+    return stations
+
+
+def read_stations_txt(station_fnames, to_epsg=None):
+    '''
+    Reads .pos files or directoryies with .pos from GPS stations and returns array of pandas DataFrames with columns time, lat, lon. 
+    If to_epsg is given columns x and y are added in respectove CRS.
+    :param fnames: list of paths.
+    :param to_epsg: EPSG code, e.g., 'EPSG:3413'
+
+    :return stations: list of pandas DataFrames
+    '''
+    stations = []
+    for station_fname in station_fnames: # iterate over stations
+        if station_fname[-4:] != '.txt': # if fname is a directory
+            fnames = station_fname + '/' + GetFileList(station_fname, '*.txt')
+        else: # if fname is a file
+            fnames = [station_fname] 
+
+        files = []
+        for fname in fnames: # iterate over files in one station directory
+            df = pd.read_csv(fname, sep=' ')
+            file = pd.DataFrame(data={'time': pd.to_datetime(df.DATE + ' ' + df.TIME), 'lon':df.LON, 'lat':df.LAT, 'height':df.HGT})
+            files += [file]
+        station = pd.concat(files)
+        stations += [station]
     
     if to_epsg is not None:
         from pyproj import Transformer
