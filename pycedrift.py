@@ -47,7 +47,7 @@ def read_stations(station_fnames, to_epsg=None):
 
 def read_stations_txt(station_fnames, to_epsg=None):
     '''
-    Reads .pos files or directoryies with .pos from GPS stations and returns array of pandas DataFrames with columns time, lat, lon. 
+    Reads .txt files or directoryies with .txt from GPS stations and returns array of pandas DataFrames with columns time, lat, lon. 
     If to_epsg is given columns x and y are added in respectove CRS.
     :param fnames: list of paths.
     :param to_epsg: EPSG code, e.g., 'EPSG:3413'
@@ -76,6 +76,7 @@ def read_stations_txt(station_fnames, to_epsg=None):
             gps.loc[:,'x'], gps.loc[:,'y'] = transformer.transform(gps.lat, gps.lon)
     
     return stations
+
 
 
 def gap_test(time_series, time_test):
