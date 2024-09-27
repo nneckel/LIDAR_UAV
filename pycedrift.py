@@ -45,6 +45,43 @@ def read_stations(station_fnames, to_epsg=None):
     return stations
 
 
+def zip_to_df(path):
+    '''
+    Reads one .txt file from .zip to pandas DataFrame
+    '''
+    import zipfile
+    with zipfile.ZipFile(path, 'r') as zip_ref:
+        for file_name in zip_ref.namelist():
+            if file_name.endswith('.txt'):
+                zip_ref.read(file_name)
+                df = pd.read_csv(zip_ref.open(file_name,'r'), sep=' ')
+    return df
+
+
+def read_stations_zip(station_fnames, to_epsg=None):
+    '''
+    Reads .txt file from list of .zip files from GPS stations and returns list of pandas DataFrames with columns time, lat, lon. 
+    If to_epsg is given columns x and y are added in respectove CRS.
+    :param fnames: list of paths to .zip files.
+    :param to_epsg: EPSG code, e.g., 'EPSG:3413'
+
+    :return stations: list of pandas DataFrames
+    '''
+    stations = []
+    for station_fname in station_fnames: # iterate over stations
+        df = zip_to_df(station_fname)
+        station = pd.DataFrame(data={'time': pd.to_datetime(df.DATE + ' ' + df.TIME), 'lon':df.LON, 'lat':df.LAT, 'height':df.HGT})
+        stations += [station]
+    
+    if to_epsg is not None:
+        from pyproj import Transformer
+        transformer = Transformer.from_crs('EPSG:4326', to_epsg)
+        for gps in stations:
+            gps.loc[:,'x'], gps.loc[:,'y'] = transformer.transform(gps.lat, gps.lon)
+    
+    return stations
+
+
 def read_stations_txt(station_fnames, to_epsg=None):
     '''
     Reads .txt files or directoryies with .txt from GPS stations and returns array of pandas DataFrames with columns time, lat, lon. 
