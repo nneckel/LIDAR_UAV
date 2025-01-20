@@ -107,6 +107,7 @@ def save_to_tif(grid, path, rasterdef, crs='EPSG:3413'):
 
 
 
+# ----- example -----
 
 las_files = ['cloud6cfdf1aac201eb67.las', 'cloud672d836ce2c2d474.las']
 metric_crs = 'EPSG:3413'
@@ -116,7 +117,6 @@ resolution = 50
 # load GPS ground stations
 fnames = ['GPS/GPS_1_8320_20240908.zip', 'GPS/GPS_2_8806_20240908.zip', 'GPS/GPS_3_8802_20240908.zip', 'GPS/GPS_4_8312_20240908.zip', 'GPS/GPS_5_8315_20240908.zip', 'GPS/GPS_6_8319_20240908.zip']
 stations = pyce.read_stations_zip(fnames, to_epsg=metric_crs)
-
 
 # do drift correction of las files and save
 las = []
