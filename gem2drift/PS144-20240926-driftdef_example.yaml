@@ -1,0 +1,49 @@
+# output from gem2survey.py:
+thickness_file: PS144-20240926-gem2-512-channel-thickness.csv
+
+# In some cases if GEM data is recorded over midnight, the date is not switched at midnight
+# If fix_midnight_bug in 'True', all times earlier than the first timestamp are shifted by one day.
+# Should always be 'False' if recording does not include midnight or no bug is present.
+fix_midnight_bug: False
+
+# metric coordinate reference system to use during drift correnction. 
+# Use 'EPSG:3413' for Arctic, or 'EPSG:3031' Antarctica
+metric_crs: EPSG:3413
+
+# method for drift corection. Can be 'gps' for using one or more gps stations on the floe or 'end_to_end' to match fist and last point
+method: 'gps'
+
+# in case method = 'gps':
+gps_files:
+  - GPS/GPS_3_8802_20240925.zip
+  - GPS/GPS_5_8315_20240925.zip
+
+translation_only: False
+
+# information to read the gps files. All .csv files can be read. 
+# 'csv_read_attributes' will be passed to pandas.read_csv. Here 'seperator', 'skiprows' and other parameters can be specified.
+gps_read_info:
+  lon_column: LON
+  lat_column: LAT
+  datetime_column: null
+  date_column: DATE
+  time_column: TIME
+  csv_read_attributes:
+    sep: ' '
+
+# Observations can be made equidistant additionally. Points wil be averaged over specified interval along track.
+# If 'False', no equidistant points are computed
+# equidistance in meters
+equidist: 2
+
+# time to which all positions are shifted. 'mean' can be passed to use the mean time of the gem measurements
+ref_time: 2024-09-26 06:00:00
+
+# If snow depth measurements from Magna probe should be used.
+# True or False
+add_snow_depth: True
+
+snow_files:
+  - snow/Katrin_0_20240926.dat
+  - snow/Katrin_20240926.dat
+  - snow/Steffi_0_20240926.dat
