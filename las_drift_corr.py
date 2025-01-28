@@ -73,12 +73,15 @@ def rasterdef_from_las(las, resolution):
 
     return {'resolution':resolution, 'xmin':xmin, 'xmax':xmax, 'ymin':ymin, 'ymax':ymax}
 
-def las_to_grid(las, rasterdef, lower_origin=False):
-    # rasterizes a las object to a grid given by a rasterdef dictionary
-    xyz_gridded = pygmt.xyz2grd(x=las.x, y=las.y, z=las.z, spacing=rasterdef['resolution'], region=[rasterdef['xmin'], rasterdef['xmax'], rasterdef['ymin'], rasterdef['ymax']])
-    if not lower_origin:
-        xyz_gridded = np.flipud(xyz_gridded)
-    return xyz_gridded
+def las_to_grid(las, rasterdef, lower_origin=False, outgrid=None):
+    # rasterizes a las object to a grid given by a rasterdef dictionary. Computes the mean of all points in a raster cell.
+    # note for future: using the median could be benifitial here, maybe use pygmt.blockmedian instead of pgmt.xyz2grd...
+    xyz_gridded = pygmt.xyz2grd(x=las.x, y=las.y, z=las.z, spacing=rasterdef['resolution'], region=[rasterdef['xmin'], rasterdef['xmax'], rasterdef['ymin'], rasterdef['ymax']], outgrid=outgrid)
+    
+    if xyz_gridded is not None:
+        if not lower_origin:
+            xyz_gridded = np.flipud(xyz_gridded)
+        return xyz_gridded
 
 def save_to_tif(grid, path, rasterdef, crs='EPSG:3413'):
     height, width = grid.shape
@@ -106,34 +109,35 @@ def save_to_tif(grid, path, rasterdef, crs='EPSG:3413'):
 #     pd.DataFrame(data={'x':np.array(las.x), 'y':np.array(las.y), 'z':np.array(las.z)}).to_csv(path)
 
 
+# an example
+if __name__ == '__main__':
 
-# ----- example -----
+    las_files = ['cloud6cfdf1aac201eb67.las', 'cloud672d836ce2c2d474.las']
+    metric_crs = 'EPSG:3413'
+    ref_time = pd.to_datetime('2024-09-02 22:20:00')
+    resolution = 50
 
-las_files = ['cloud6cfdf1aac201eb67.las', 'cloud672d836ce2c2d474.las']
-metric_crs = 'EPSG:3413'
-ref_time = pd.to_datetime('2024-09-02 22:20:00')
-resolution = 50
+    # load GPS ground stations
+    fnames = ['GPS/GPS_1_8320_20240908.zip', 'GPS/GPS_2_8806_20240908.zip', 'GPS/GPS_3_8802_20240908.zip', 'GPS/GPS_4_8312_20240908.zip', 'GPS/GPS_5_8315_20240908.zip', 'GPS/GPS_6_8319_20240908.zip']
+    stations = pyce.read_stations_zip(fnames, to_epsg=metric_crs)
 
-# load GPS ground stations
-fnames = ['GPS/GPS_1_8320_20240908.zip', 'GPS/GPS_2_8806_20240908.zip', 'GPS/GPS_3_8802_20240908.zip', 'GPS/GPS_4_8312_20240908.zip', 'GPS/GPS_5_8315_20240908.zip', 'GPS/GPS_6_8319_20240908.zip']
-stations = pyce.read_stations_zip(fnames, to_epsg=metric_crs)
 
-# do drift correction of las files and save
-las = []
-for las_file in las_files:
-    la = laspy.read(las_file)
-    las_drift_correction(la, stations, ref_time=ref_time, metric_crs=metric_crs)
-    la.write(las_file[:-4]+'_drift_corr.las')
-    las += [la]
+    # do drift correction of las files and save
+    las = []
+    for las_file in las_files:
+        la = laspy.read(las_file)
+        las_drift_correction(la, stations, ref_time=ref_time, metric_crs=metric_crs)
+        la.write(las_file[:-4]+'_drift_corr.las')
+        las += [la]
 
-# calculate raster bounds
-rasterdef = rasterdef_from_las(las, resolution)
+    # calculate raster bounds
+    rasterdef = rasterdef_from_las(las, resolution)
 
-# rasterize las
-grids = [las_to_grid(la, rasterdef) for la in las]
+    # rasterize las
+    grids = [las_to_grid(la, rasterdef) for la in las]
 
-# average rasters
-mean_grid = np.nanmean(np.array(grids), axis=0)
+    # average rasters
+    mean_grid = np.nanmean(np.array(grids), axis=0)
 
-# save
-save_to_tif(mean_grid, 'mean_las.tif', rasterdef)
+    # save
+    save_to_tif(mean_grid, 'mean_las.tif', rasterdef)
